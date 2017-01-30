@@ -6,32 +6,39 @@ require 'pp'
 class AltFacter
   def initialize
     @altfacts = {
-      'kernel' => %w(windows Darwin Linux Solaris)
+      'architecture' => %w(x86 x64 8086),
+      'kernel' => %w(windows Darwin Linux Solaris),
+      'os' => { 'name' => %w(pancakes windows amiga) }
     }
 
     @facts = Facter.to_hash
     @fact_keys = Facter.list
   end
 
-  def process_facts
-    @facts.each do |key, value|
+  def get_main_facts
+    @facts
+  end
+
+  def process_facts(facts)
+    facts.each do |key, value|
       if value.is_a?(Hash)
+        process_facts(value)
         # puts "Hash: #{key}"
       elsif value.is_a?(Integer)
-        @facts[key] = rint
+        facts[key] = rint
       elsif value =~ /^[-+]?[0-9]*\.?[0-9]+$/
         # puts "Float: #{key}"
-        @facts[key] = rfloat
+        facts[key] = rfloat
       elsif value =~ /^(?:(\d+)\.)?(?:(\d+)\.)?(\*|\d+)$/
         # puts "SemVer: #{key}"
-        @facts[key] = rsemver
+        facts[key] = rsemver
       elsif value =~ /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/
         # puts "Network: #{key}"
-        @facts[key] = rnetwork
+        facts[key] = rnetwork
       elsif value =~ /^(\d+).(\d+)/ && value =~ /MB|GB$/
         do_ram(key, value)
-      elsif value.is_a?(TrueClass) or value.is_a?(FalseClass)
-        @facts[key] = ['true','false'].sample
+      elsif value.is_a?(TrueClass) || value.is_a?(FalseClass)
+       facts[key] = ['true','false'].sample
       else
         # puts Other: #{key}
         distort_facts(key, value) if @altfacts[key]
@@ -86,11 +93,15 @@ class AltFacter
     @facts[key] = @altfacts[key].sample
   end
 
+  def testit(blah)
+    "i'm here bro #{blah}"
+  end
   # end of AltFacter class
 end
 
 # Begin script
 i = AltFacter.new
-i.process_facts
+facts = i.get_main_facts
+i.process_facts(facts)
 i.show_facts
 
